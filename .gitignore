@@ -1,0 +1,35 @@
+# Maven
+**/target/
+**/bin/
+**/out/
+
+# Compiled files
+*.class
+*.jar
+
+# Eclipse
+.project
+.classpath
+.settings/
+.metadata/
+
+# IntelliJ
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+__MACOSX/
+
+# Temporary files
+*.tmp
+*.log
+
+# Secrets
+.env
+*.key
+*.pem
