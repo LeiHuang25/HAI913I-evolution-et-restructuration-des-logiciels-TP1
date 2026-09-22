@@ -2,6 +2,7 @@ package hai913i.tp1.model;
 
 import java.util.List;
 
+// Informations structurelles extraites pour un type Java.
 public record TypeFact(
 		String quilifiedName,
 		TypeKind kind,
