@@ -119,7 +119,7 @@ public final class StructureVisitor extends ASTVisitor{
     			);
     }
     
-    private List<TypeFact> getTypes() {
+    public List<TypeFact> getTypes() {
     	return List.copyOf(types);
     }
 }

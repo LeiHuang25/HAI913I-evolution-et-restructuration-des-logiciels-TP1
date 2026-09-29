@@ -4,7 +4,7 @@ import java.util.List;
 
 // Informations structurelles extraites pour un type Java.
 public record TypeFact(
-		String quilifiedName,
+		String qualifiedName,
 		TypeKind kind,
 		String packageName,
 		List<String> superclasses,

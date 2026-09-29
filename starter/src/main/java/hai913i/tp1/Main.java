@@ -5,6 +5,9 @@ import java.util.List;
 
 import org.eclipse.jdt.core.compiler.IProblem;
 
+import hai913i.tp1.extract.StructureVisitor;
+import hai913i.tp1.model.TypeFact;
+import hai913i.tp1.model.TypeKind;
 import hai913i.tp1.parse.JdtParser;
 import hai913i.tp1.parse.JdtParser.ParsedFile;
 import hai913i.tp1.parse.ProjectSources;
@@ -53,6 +56,51 @@ public final class Main {
         System.out.println("Racine des sources     : " + sources.sourceRoot());
         System.out.println("Unites de compilation  : " + files.size());
         System.out.println("Erreurs de compilation : " + errors);
+        
+        //A2 structureVisitor
+        StructureVisitor structureVisitor = new StructureVisitor();
+        
+        for (ParsedFile file : files) {
+            file.unit().accept(structureVisitor);
+        }
+
+        List<TypeFact> types = structureVisitor.getTypes();
+        
+        long classCount = types.stream()
+                .filter(type -> type.kind() == TypeKind.CLASS)
+                .count();
+
+        long interfaceCount = types.stream()
+                .filter(type -> type.kind() == TypeKind.INTERFACE)
+                .count();
+
+        long enumCount = types.stream()
+                .filter(type -> type.kind() == TypeKind.ENUM)
+                .count();
+
+        long recordCount = types.stream()
+                .filter(type -> type.kind() == TypeKind.RECORD)
+                .count();
+        
+        System.out.println("Structure du projet :");
+        System.out.println("Types       : " + types.size());
+        System.out.println("Classes     : " + classCount);
+        System.out.println("Interfaces  : " + interfaceCount);
+        System.out.println("Enumerations: " + enumCount);
+        System.out.println("Records     : " + recordCount);
+        
+        System.out.println("Types extraits :");
+        types.stream()
+                .sorted((first, second) ->
+                        first.qualifiedName()
+                                .compareTo(second.qualifiedName()))
+                .forEach(type ->
+                        System.out.println(
+                                type.kind()
+                                + " : "
+                                + type.qualifiedName()
+                        )
+                );
         
         //A1 Parcourir un AST
         for (ParsedFile file : files) {
