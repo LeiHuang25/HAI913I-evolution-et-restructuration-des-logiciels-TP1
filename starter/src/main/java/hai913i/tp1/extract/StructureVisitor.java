@@ -115,6 +115,8 @@ public final class StructureVisitor extends ASTVisitor {
     	String packageName = findPackageName(node);
     	String qualifiedName = findQualifiedName(node,packageName);
     	
+    	List<String> superclasses =extractSuperclasses(node);
+        List<String> interfaces =extractInterfaces(node);
     	List<FieldFact> fields = extractFields(node);
     	List<MethodFact> methods = extractMethods(node);
     	
@@ -122,8 +124,8 @@ public final class StructureVisitor extends ASTVisitor {
     			qualifiedName,
     			kind,
     			packageName,
-    			List.of(), //superclass
-    			List.of(), //interfaces
+    			superclasses, //superclass
+    			interfaces, //interfaces
     			fields,
     			methods //methodes
     			);
@@ -148,6 +150,47 @@ public final class StructureVisitor extends ASTVisitor {
         }
 
         return "package";
+    }
+    
+    //extraction superclass
+    private List<String> extractSuperclasses(AbstractTypeDeclaration declaration) {
+
+        List<String> superclasses = new ArrayList<>();
+
+        ITypeBinding binding = declaration.resolveBinding();
+
+        if (binding == null) {
+            return superclasses;
+        }
+
+        ITypeBinding superclass = binding.getSuperclass();
+
+        while (superclass != null
+                && !superclass.getQualifiedName().equals("java.lang.Object")) {
+
+            superclasses.add(superclass.getQualifiedName());
+            superclass = superclass.getSuperclass();
+        }
+
+        return superclasses;
+    }
+    
+    //extraction interfaces
+    private List<String> extractInterfaces(AbstractTypeDeclaration declaration) {
+
+        List<String> interfaces = new ArrayList<>();
+
+        ITypeBinding binding = declaration.resolveBinding();
+
+        if (binding == null) {
+            return interfaces;
+        }
+
+        for (ITypeBinding interfaceBinding : binding.getInterfaces()) {
+            interfaces.add(interfaceBinding.getQualifiedName());
+        }
+
+        return interfaces;
     }
     
     //extraction fields

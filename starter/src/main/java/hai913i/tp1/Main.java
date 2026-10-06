@@ -119,7 +119,14 @@ public final class Main {
         
         //暂时
         for (TypeFact type : types) {
+        	 System.out.println();
         	System.out.println(type.qualifiedName());
+        	System.out.println("  kind        : " + type.kind());
+            System.out.println("  package     : " + type.packageName());
+            System.out.println("  superclasses: " + type.superclasses());
+            System.out.println("  interfaces  : " + type.interfaces());
+            System.out.println("  fields      : " + type.fields().size());
+            System.out.println("  methods     : " + type.methods().size());
         	
         	for (FieldFact field : type.fields()) {
         		System.out.println(
