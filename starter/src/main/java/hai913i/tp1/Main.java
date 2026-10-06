@@ -7,6 +7,7 @@ import org.eclipse.jdt.core.compiler.IProblem;
 
 import hai913i.tp1.extract.StructureVisitor;
 import hai913i.tp1.model.FieldFact;
+import hai913i.tp1.model.MethodFact;
 import hai913i.tp1.model.TypeFact;
 import hai913i.tp1.model.TypeKind;
 import hai913i.tp1.parse.JdtParser;
@@ -116,6 +117,7 @@ public final class Main {
                         )
                 );
         
+        //暂时
         for (TypeFact type : types) {
         	System.out.println(type.qualifiedName());
         	
@@ -127,12 +129,32 @@ public final class Main {
                         + field.name()
                 );
         	}
+        	
+        	for (MethodFact method : type.methods()) {
+                System.out.println(
+                        "  METHOD "
+                        + method.name()
+                        + " parameters=" + method.nbParametre()
+                        + " constructor=" + method.constructor()
+                );
+            }
         }
         
         int fieldCount = types.stream()
                 .mapToInt(type -> type.fields().size())
                 .sum();
+        
+        int methodCount = types.stream()
+                .mapToInt(type -> type.methods().size())
+                .sum();
+
+        long constructorCount = types.stream()
+                .flatMap(type -> type.methods().stream())
+                .filter(MethodFact::constructor)
+                .count();
 
         System.out.println("Fields : " + fieldCount);
+        System.out.println("Methodes      : " + methodCount);
+        System.out.println("Constructeurs : " + constructorCount);
     }
 }

@@ -13,6 +13,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.EnumDeclaration;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.RecordDeclaration;
@@ -21,6 +22,7 @@ import org.eclipse.jdt.core.dom.TypeDeclarationStatement;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
 import hai913i.tp1.model.FieldFact;
+import hai913i.tp1.model.MethodFact;
 import hai913i.tp1.model.TypeFact;
 import hai913i.tp1.model.TypeKind;
 
@@ -114,6 +116,7 @@ public final class StructureVisitor extends ASTVisitor {
     	String qualifiedName = findQualifiedName(node,packageName);
     	
     	List<FieldFact> fields = extractFields(node);
+    	List<MethodFact> methods = extractMethods(node);
     	
     	return new TypeFact(
     			qualifiedName,
@@ -122,7 +125,7 @@ public final class StructureVisitor extends ASTVisitor {
     			List.of(), //superclass
     			List.of(), //interfaces
     			fields,
-    			List.of() //methodes
+    			methods //methodes
     			);
     }
     
@@ -159,11 +162,9 @@ public final class StructureVisitor extends ASTVisitor {
                 String visibility = visibilityOf(fieldDeclaration.getModifiers());
 
                 for (Object fragmentObject : fieldDeclaration.fragments()) {
-                    VariableDeclarationFragment fragment =
-                            (VariableDeclarationFragment) fragmentObject;
+                    VariableDeclarationFragment fragment = (VariableDeclarationFragment) fragmentObject;
 
-                    String declaredType =
-                            baseType + "[]".repeat(fragment.extraDimensions().size());
+                    String declaredType = baseType + "[]".repeat(fragment.extraDimensions().size());
 
                     fields.add(new FieldFact(
                             fragment.getName().getIdentifier(),
@@ -174,5 +175,32 @@ public final class StructureVisitor extends ASTVisitor {
             }
     	}
     	return fields;
+    }
+    
+    //extraction methods
+    private List<MethodFact> extractMethods(AbstractTypeDeclaration declaration) {
+
+        List<MethodFact> methods = new ArrayList<>();
+
+        for (Object element : declaration.bodyDeclarations()) {
+            BodyDeclaration bodyDeclaration =
+                    (BodyDeclaration) element;
+
+            if (bodyDeclaration instanceof MethodDeclaration methodDeclaration) {
+                String name = methodDeclaration.getName().getIdentifier();
+
+                int parameterCount = methodDeclaration.parameters().size();
+
+                boolean constructor = methodDeclaration.isConstructor();
+
+                methods.add(new MethodFact(
+                        name,
+                        parameterCount,
+                        constructor
+                ));
+            }
+        }
+
+        return methods;
     }
 }
