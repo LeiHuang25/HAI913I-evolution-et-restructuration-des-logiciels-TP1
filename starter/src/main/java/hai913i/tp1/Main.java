@@ -6,6 +6,7 @@ import java.util.List;
 import org.eclipse.jdt.core.compiler.IProblem;
 
 import hai913i.tp1.extract.StructureVisitor;
+import hai913i.tp1.model.FieldFact;
 import hai913i.tp1.model.TypeFact;
 import hai913i.tp1.model.TypeKind;
 import hai913i.tp1.parse.JdtParser;
@@ -57,6 +58,19 @@ public final class Main {
         System.out.println("Unites de compilation  : " + files.size());
         System.out.println("Erreurs de compilation : " + errors);
         
+        //A1 Parcourir un AST
+        for (ParsedFile file : files) {
+            String fileName = file.path().getFileName().toString();
+
+            if (fileName.equals("Dvd.java") || fileName.equals("Category.java")) {
+                System.out.println();
+                System.out.println("AST de " + fileName + "\n");
+
+                file.unit().accept(new Visiteur());
+            }
+        }
+        
+        
         //A2 structureVisitor
         StructureVisitor structureVisitor = new StructureVisitor();
         
@@ -102,20 +116,23 @@ public final class Main {
                         )
                 );
         
-        //A1 Parcourir un AST
-        for (ParsedFile file : files) {
-            String fileName = file.path().getFileName().toString();
-
-            if (fileName.equals("Dvd.java") || fileName.equals("Category.java")) {
-                System.out.println();
-                System.out.println("AST de " + fileName + "\n");
-
-                file.unit().accept(new Visiteur());
-            }
+        for (TypeFact type : types) {
+        	System.out.println(type.qualifiedName());
+        	
+        	for (FieldFact field : type.fields()) {
+        		System.out.println(
+                        "  FIELD "
+                        + field.visibility() + " "
+                        + field.declaredType() + " "
+                        + field.name()
+                );
+        	}
         }
+        
+        int fieldCount = types.stream()
+                .mapToInt(type -> type.fields().size())
+                .sum();
 
-        // À FAIRE (A1 et suite) : parcourir les AST avec vos visiteurs, construire votre modèle de faits,
-        // puis calculer les métriques et le graphe d'appel. Gardez cette classe courte : elle lit les
-        // arguments et délègue.
+        System.out.println("Fields : " + fieldCount);
     }
 }

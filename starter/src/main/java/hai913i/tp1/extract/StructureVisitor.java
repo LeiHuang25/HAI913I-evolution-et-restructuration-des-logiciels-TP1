@@ -8,18 +8,23 @@ import java.util.List;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
+import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.EnumDeclaration;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclarationStatement;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 
+import hai913i.tp1.model.FieldFact;
 import hai913i.tp1.model.TypeFact;
 import hai913i.tp1.model.TypeKind;
 
-public final class StructureVisitor extends ASTVisitor{
+public final class StructureVisitor extends ASTVisitor {
 	private final List<TypeFact> types = new ArrayList<>();
 	
 	// Extrait les informations structurelles des types Java.
@@ -64,7 +69,7 @@ public final class StructureVisitor extends ASTVisitor{
     	return node.getParent() instanceof TypeDeclarationStatement;
     }
     
-    private String findpackageName(ASTNode node) {
+    private String findPackageName(ASTNode node) {
     	CompilationUnit unit = (CompilationUnit) node.getRoot();
     	PackageDeclaration packageDeclaration = unit.getPackage();
     	if (packageDeclaration == null) {
@@ -105,8 +110,10 @@ public final class StructureVisitor extends ASTVisitor{
     }
     
     private TypeFact createTypeFact (AbstractTypeDeclaration node, TypeKind kind) {
-    	String packageName = findpackageName(node);
+    	String packageName = findPackageName(node);
     	String qualifiedName = findQualifiedName(node,packageName);
+    	
+    	List<FieldFact> fields = extractFields(node);
     	
     	return new TypeFact(
     			qualifiedName,
@@ -114,12 +121,58 @@ public final class StructureVisitor extends ASTVisitor{
     			packageName,
     			List.of(), //superclass
     			List.of(), //interfaces
-    			List.of(), //attributs
+    			fields,
     			List.of() //methodes
     			);
     }
     
     public List<TypeFact> getTypes() {
     	return List.copyOf(types);
+    }
+    
+    // visibility
+    private String visibilityOf(int modifiers) {
+        if (Modifier.isPublic(modifiers)) {
+            return "public";
+        }
+
+        if (Modifier.isProtected(modifiers)) {
+            return "protected";
+        }
+
+        if (Modifier.isPrivate(modifiers)) {
+            return "private";
+        }
+
+        return "package";
+    }
+    
+    //extraction fields
+    private List<FieldFact> extractFields(AbstractTypeDeclaration declaration) {
+    	List<FieldFact> fields = new ArrayList<>();
+    	
+    	for (Object element : declaration.bodyDeclarations()) {
+            BodyDeclaration bodyDeclaration = (BodyDeclaration) element;
+
+            if (bodyDeclaration instanceof FieldDeclaration fieldDeclaration) {
+                String baseType = fieldDeclaration.getType().toString();
+                String visibility = visibilityOf(fieldDeclaration.getModifiers());
+
+                for (Object fragmentObject : fieldDeclaration.fragments()) {
+                    VariableDeclarationFragment fragment =
+                            (VariableDeclarationFragment) fragmentObject;
+
+                    String declaredType =
+                            baseType + "[]".repeat(fragment.extraDimensions().size());
+
+                    fields.add(new FieldFact(
+                            fragment.getName().getIdentifier(),
+                            declaredType,
+                            visibility
+                    ));
+                }
+            }
+    	}
+    	return fields;
     }
 }
