@@ -224,22 +224,24 @@ public final class StructureVisitor extends ASTVisitor {
     private List<MethodFact> extractMethods(AbstractTypeDeclaration declaration) {
 
         List<MethodFact> methods = new ArrayList<>();
-
+        CompilationUnit compilationUnit = (CompilationUnit) declaration.getRoot();
+        
         for (Object element : declaration.bodyDeclarations()) {
-            BodyDeclaration bodyDeclaration =
-                    (BodyDeclaration) element;
+            BodyDeclaration bodyDeclaration = (BodyDeclaration) element;
 
             if (bodyDeclaration instanceof MethodDeclaration methodDeclaration) {
                 String name = methodDeclaration.getName().getIdentifier();
-
                 int parameterCount = methodDeclaration.parameters().size();
-
                 boolean constructor = methodDeclaration.isConstructor();
+                
+                CallVisitor callVisitor = new CallVisitor(compilationUnit);
+                methodDeclaration.accept(callVisitor);
 
                 methods.add(new MethodFact(
                         name,
                         parameterCount,
-                        constructor
+                        constructor,
+                        callVisitor.getCalls()
                 ));
             }
         }

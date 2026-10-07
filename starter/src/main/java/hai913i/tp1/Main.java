@@ -6,6 +6,7 @@ import java.util.List;
 import org.eclipse.jdt.core.compiler.IProblem;
 
 import hai913i.tp1.extract.StructureVisitor;
+import hai913i.tp1.model.CallFact;
 import hai913i.tp1.model.FieldFact;
 import hai913i.tp1.model.MethodFact;
 import hai913i.tp1.model.TypeFact;
@@ -144,7 +145,21 @@ public final class Main {
                         + " parameters=" + method.nbParametre()
                         + " constructor=" + method.constructor()
                 );
+                
+                for (CallFact call : method.calls()) {
+            		System.out.println(
+            				" CALL "
+            				+ call.methodName()
+            				+ "receiver=" + call.receiverType()
+            				+ " target=" + call.targetMethod()
+            				+ "line=" + call.line()
+            				+ "resolved=" + call.resolved()
+            				+ "project=" + call.projectTarget()
+            				);
+            	}
             }
+        	
+        	
         }
         
         int fieldCount = types.stream()
@@ -159,9 +174,34 @@ public final class Main {
                 .flatMap(type -> type.methods().stream())
                 .filter(MethodFact::constructor)
                 .count();
+        
+        long callCount = types.stream()
+                .flatMap(type -> type.methods().stream())
+                .flatMap(method -> method.calls().stream())
+                .count();
 
+        long projectCallCount = types.stream()
+                .flatMap(type -> type.methods().stream())
+                .flatMap(method -> method.calls().stream())
+                .filter(call -> call.projectTarget())
+                .count();
+
+        long unresolvedCallCount = types.stream()
+                .flatMap(type -> type.methods().stream())
+                .flatMap(method -> method.calls().stream())
+                .filter(call -> !call.resolved())
+                .count();
+
+        long externalCallCount =
+                callCount - projectCallCount - unresolvedCallCount;
+        
+        System.out.println();
         System.out.println("Fields : " + fieldCount);
         System.out.println("Methodes      : " + methodCount);
         System.out.println("Constructeurs : " + constructorCount);
+        System.out.println("Appels totaux           : " + callCount);
+        System.out.println("Appels vers le projet   : " + projectCallCount);
+        System.out.println("Appels externes         : " + externalCallCount);
+        System.out.println("Appels non resolus      : " + unresolvedCallCount);
     }
 }
