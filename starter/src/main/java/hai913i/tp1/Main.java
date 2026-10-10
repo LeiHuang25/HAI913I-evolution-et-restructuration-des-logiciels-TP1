@@ -15,7 +15,7 @@ import hai913i.tp1.parse.JdtParser;
 import hai913i.tp1.parse.JdtParser.ParsedFile;
 import hai913i.tp1.parse.ProjectSources;
 import hai913i.tp1.visitor.Visiteur;
-
+import hai913i.tp1.model.ProjectFact;
 /**
  * Point d'entrée en ligne de commande de l'analyseur (version de départ).
  *
@@ -79,8 +79,9 @@ public final class Main {
         for (ParsedFile file : files) {
             file.unit().accept(structureVisitor);
         }
-
-        List<TypeFact> types = structureVisitor.getTypes();
+        
+        ProjectFact facts = new ProjectFact(structureVisitor.getTypes());
+        List<TypeFact> types = facts.types();
         
         long classCount = types.stream()
                 .filter(type -> type.kind() == TypeKind.CLASS)
@@ -160,34 +161,27 @@ public final class Main {
                 .mapToInt(type -> type.fields().size())
                 .sum();
         
-        int methodCount = types.stream()
-                .mapToInt(type -> type.methods().size())
-                .sum();
+        int methodCount = facts.methods().size();
 
-        long constructorCount = types.stream()
-                .flatMap(type -> type.methods().stream())
+        long constructorCount = facts.methods().stream()
                 .filter(MethodFact::constructor)
                 .count();
         
-        long callCount = types.stream()
-                .flatMap(type -> type.methods().stream())
-                .flatMap(method -> method.calls().stream())
-                .count();
+        long callCount = facts.calls().size();
 
-        long projectCallCount = types.stream()
-                .flatMap(type -> type.methods().stream())
-                .flatMap(method -> method.calls().stream())
-                .filter(call -> call.projectTarget())
-                .count();
+        long projectCallCount = facts.calls().stream()
+        		.filter(CallFact::projectTarget)
+        		.count();
 
-        long unresolvedCallCount = types.stream()
-                .flatMap(type -> type.methods().stream())
-                .flatMap(method -> method.calls().stream())
+        long unresolvedCallCount = facts.calls().stream()
                 .filter(call -> !call.resolved())
                 .count();
 
         long externalCallCount =
-                callCount - projectCallCount - unresolvedCallCount;
+                callCount 
+                - projectCallCount 
+                - unresolvedCallCount;
+        
         
         System.out.println();
         System.out.println("Types         : " + types.size());
@@ -203,5 +197,15 @@ public final class Main {
         System.out.println("Appels vers le projet   : " + projectCallCount);
         System.out.println("Appels externes         : " + externalCallCount);
         System.out.println("Appels non resolus      : " + unresolvedCallCount);
+        
+        long resolvedProjectTargets = facts.calls().stream()
+                .filter(CallFact::projectTarget)
+                .filter(call -> facts.findTarget(call).isPresent())
+                .count();
+
+        System.out.println(
+                "Cibles projet retrouvees : "
+                + resolvedProjectTargets
+        );
     }
 }
