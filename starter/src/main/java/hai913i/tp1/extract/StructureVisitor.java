@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
+import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.EnumDeclaration;
@@ -236,8 +237,9 @@ public final class StructureVisitor extends ASTVisitor {
             if (bodyDeclaration instanceof MethodDeclaration methodDeclaration) {
                 String name = methodDeclaration.getName().getIdentifier();
                 String methodId = createMethodId(methodDeclaration,qualifiedTypeName);
-                int parameterCount = methodDeclaration.parameters().size();
+                int nbParametre = methodDeclaration.parameters().size();
                 boolean constructor = methodDeclaration.isConstructor();
+                int bodyLineCount = countBodyLines(methodDeclaration,compilationUnit);
                 
                 CallVisitor callVisitor = new CallVisitor(compilationUnit);
                 methodDeclaration.accept(callVisitor);
@@ -245,8 +247,9 @@ public final class StructureVisitor extends ASTVisitor {
                 methods.add(new MethodFact(
                 		methodId,
                         name,
-                        parameterCount,
+                        nbParametre,
                         constructor,
+                        bodyLineCount,
                         callVisitor.getCalls()
                 ));
             }
@@ -255,6 +258,7 @@ public final class StructureVisitor extends ASTVisitor {
         return methods;
     }
     
+    //B1.1
     private String createMethodId(MethodDeclaration methodDeclaration, String fallbackDeclaringType) {
     	IMethodBinding binding = methodDeclaration.resolveBinding();
     	
@@ -322,6 +326,20 @@ public final class StructureVisitor extends ASTVisitor {
     			+ ")";
     }
     
+    //B2.1 on calcule la bodyline method
+    private int countBodyLines(MethodDeclaration methodDeclaration, CompilationUnit compilationUnit) {
+    	Block body = methodDeclaration.getBody();
+    	
+    	if (body == null) {return 0;}
+    	
+    	int startPosition = body.getStartPosition();
+    	int endPosition = body.getStartPosition() + body.getLength() - 1;
+    	
+    	int startLine = compilationUnit.getLineNumber(startPosition);
+    	int endLine = compilationUnit.getLineNumber(endPosition);
+    	
+    	return endLine - startLine +1;
+    }
     
     
 }

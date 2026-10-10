@@ -1,11 +1,16 @@
 package hai913i.tp1;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import org.eclipse.jdt.core.compiler.IProblem;
 
 import hai913i.tp1.extract.StructureVisitor;
+import hai913i.tp1.metrics.MetricsCalculator;
 import hai913i.tp1.model.CallFact;
 import hai913i.tp1.model.FieldFact;
 import hai913i.tp1.model.MethodFact;
@@ -16,6 +21,7 @@ import hai913i.tp1.parse.JdtParser.ParsedFile;
 import hai913i.tp1.parse.ProjectSources;
 import hai913i.tp1.visitor.Visiteur;
 import hai913i.tp1.model.ProjectFact;
+import hai913i.tp1.model.SourceFileFact;
 /**
  * Point d'entrée en ligne de commande de l'analyseur (version de départ).
  *
@@ -31,11 +37,26 @@ public final class Main {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 1) {
-            System.err.println("Usage : java -jar target/hai913i-tp1-analyzer.jar DOSSIER_DU_PROJET");
+        if (args.length < 2) {
+            System.err.println("Usage : java -jar target/hai913i-tp1-analyzer.jar" + "DOSSIER_DU_PROJET X");
             System.exit(2);
         }
         Path project = Path.of(args[0]);
+        //B2
+        int threshold;
+        try {
+        	threshold = Integer.parseInt(args[1]);
+        }catch (NumberFormatException exception) {
+        	System.err.println("Erreur : X doit etre un entier positif ou nul.");
+        	System.exit(2);
+        	return;
+        }
+        if(threshold < 0) {
+        	System.err.println("Erreur : X doit etre positif ou nul.");
+        	System.exit(2);
+        	return;
+        }
+        
         ProjectSources sources;
         try {
             sources = ProjectSources.of(project);
@@ -79,9 +100,38 @@ public final class Main {
         for (ParsedFile file : files) {
             file.unit().accept(structureVisitor);
         }
+        //B2.2
+        List<SourceFileFact> sourceFiles = new ArrayList<>();
         
-        ProjectFact facts = new ProjectFact(structureVisitor.getTypes());
+        for (ParsedFile file : files) {
+        	String relativePath = sources.sourceRoot()
+        			.relativize(file.path())
+        			.toString()
+        			.replace('\\', '/');
+        	String packageName;
+        	
+        	if (file.unit().getPackage() == null) {
+        		packageName = "(défaut)";
+        	}else {
+        		packageName = file.unit()
+        				.getPackage()
+        				.getName()
+        				.getFullyQualifiedName();
+        	}
+        	
+        	int lineCount = Files.readAllLines(file.path()).size();
+        	
+        	sourceFiles.add(new SourceFileFact(
+        			relativePath,
+        			packageName,
+        			lineCount));
+        }
+        
+        //B1.2 je utilise mon propre fact model
+        ProjectFact facts = new ProjectFact(structureVisitor.getTypes(),sourceFiles);
         List<TypeFact> types = facts.types();
+        //B2
+        MetricsCalculator metrics = new MetricsCalculator(facts);
         
         long classCount = types.stream()
                 .filter(type -> type.kind() == TypeKind.CLASS)
@@ -136,9 +186,10 @@ public final class Main {
                 System.out.println(
                         "  METHOD "
                         + method.name()
-                        + "id=" + method.id()
+                        + " id=" + method.id()
                         + " parameters=" + method.nbParametre()
                         + " constructor=" + method.constructor()
+                        + " bodyLines=" + method.bodyLineCount()
                 );
                 
                 for (CallFact call : method.calls()) {
@@ -203,9 +254,193 @@ public final class Main {
                 .filter(call -> facts.findTarget(call).isPresent())
                 .count();
 
+        System.out.println("Cibles projet retrouvees : " + resolvedProjectTargets);
+        
+        long methodsWithBody = facts.methods().stream()
+                .filter(method -> method.bodyLineCount() > 0)
+                .count();
+
+        int totalMethodBodyLines = facts.methods().stream()
+                .mapToInt(MethodFact::bodyLineCount)
+                .sum();
+
+        double averageMethodBodyLines =
+                methodsWithBody == 0
+                        ? 0.0
+                        : (double) totalMethodBodyLines
+                            / methodsWithBody;
+
+        System.out.println();
+        System.out.println("Methodes avec corps       : " + methodsWithBody);
+
+        System.out.println("Lignes des corps          : " + totalMethodBodyLines);
+
+        System.out.printf("Moyenne lignes / methode  : %.2f%n",averageMethodBodyLines);
+        
+        System.out.println();
+        System.out.println("Fichiers sources :");
+
+        for (SourceFileFact sourceFile : facts.sourceFiles()) {
+            System.out.println(
+                    "  "
+                    + sourceFile.relativePath()
+                    + " package=" + sourceFile.packageName()
+                    + " lines=" + sourceFile.lineCount()
+            );
+        }
         System.out.println(
-                "Cibles projet retrouvees : "
-                + resolvedProjectTargets
+                "Lignes de l'application : "
+                + facts.applicationLineCount()
         );
+
+        System.out.println(
+                "Paquetages distincts    : "
+                + facts.packageCount()
+        );
+        
+        System.out.println();
+        System.out.println("Metriques B2");
+        System.out.println("------------");
+
+        System.out.println(
+                "Q1  Nombre de classes               : "
+                + metrics.classCount()
+        );
+
+        System.out.println(
+                "Q2  Lignes de l'application         : "
+                + metrics.applicationLineCount()
+        );
+
+        System.out.println(
+                "Q3  Nombre total de methodes        : "
+                + metrics.methodCount()
+        );
+
+        System.out.println(
+                "Q4  Nombre total de paquetages      : "
+                + metrics.packageCount()
+        );
+
+        System.out.printf(
+                Locale.ROOT,
+                "Q5  Moyenne methodes / classe       : %.2f%n",
+                metrics.averageMethodsPerClass()
+        );
+
+        System.out.printf(
+                Locale.ROOT,
+                "Q6  Moyenne lignes / methode        : %.2f%n",
+                metrics.averageBodyLinesPerMethod()
+        );
+
+        System.out.printf(
+                Locale.ROOT,
+                "Q7  Moyenne attributs / classe      : %.2f%n",
+                metrics.averageFieldsPerClass()
+        );
+        
+        System.out.println(
+                "Q8  10 % des classes avec le plus de methodes :"
+        );
+
+        for (TypeFact type : metrics.topTenPercentByMethods()) {
+            System.out.println(
+                    "    "
+                    + type.qualifiedName()
+                    + " : "
+                    + type.methods().size()
+            );
+        }
+        
+        System.out.println(
+                "Q9  10 % des classes avec le plus d'attributs :"
+        );
+
+        for (TypeFact type : metrics.topTenPercentByFields()) {
+            System.out.println(
+                    "    "
+                    + type.qualifiedName()
+                    + " : "
+                    + type.fields().size()
+            );
+        }
+        
+        System.out.println(
+                "Q10 Intersection de Q8 et Q9 :"
+        );
+
+        for (TypeFact type :
+                metrics.topTenPercentIntersection()) {
+
+            System.out.println(
+                    "    " + type.qualifiedName()
+            );
+        }
+        
+        System.out.println(
+                "Q11 Classes avec strictement plus de "
+                + threshold
+                + " methodes :"
+        );
+
+        for (TypeFact type :
+                metrics.classesWithMoreThanMethods(threshold)) {
+
+            System.out.println(
+                    "    "
+                    + type.qualifiedName()
+                    + " : "
+                    + type.methods().size()
+            );
+        }
+        
+        System.out.println(
+                "Q12 Methodes avec le plus de lignes, par classe :"
+        );
+
+        for (Map.Entry<TypeFact, List<MethodFact>> entry :
+                metrics
+                        .topTenPercentMethodsByLinesForEachClass()
+                        .entrySet()) {
+
+            TypeFact type = entry.getKey();
+            List<MethodFact> selectedMethods =
+                    entry.getValue();
+
+            System.out.println(
+                    "    " + type.qualifiedName()
+            );
+
+            if (selectedMethods.isEmpty()) {
+                System.out.println(
+                        "        aucune methode avec corps"
+                );
+            } else {
+                for (MethodFact method : selectedMethods) {
+                    System.out.println(
+                            "        "
+                            + method.id()
+                            + " : "
+                            + method.bodyLineCount()
+                            + " lignes"
+                    );
+                }
+            }
+        }
+        
+        System.out.println(
+                "Q13 Nombre maximal de parametres : "
+                + metrics.maximumParameterCount()
+        );
+
+        for (MethodFact method :
+                metrics.methodsWithMaximumParameters()) {
+
+            System.out.println(
+                    "    " + method.id()
+            );
+        }
+        
     }
 }

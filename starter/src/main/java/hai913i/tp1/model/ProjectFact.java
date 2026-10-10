@@ -12,12 +12,16 @@ public final class ProjectFact {
 
     private final List<TypeFact> types;
     private final Map<String, MethodFact> methodsById;
+    private final List<SourceFileFact> sourceFiles;
 
-    public ProjectFact(List<TypeFact> extractedTypes) {
+    public ProjectFact(List<TypeFact> extractedTypes, List<SourceFileFact> extractedSourceFiles) {
         this.types = extractedTypes.stream()
                 .map(ProjectFact::sortedType)
                 .sorted(Comparator.comparing(TypeFact::qualifiedName))
                 .toList();
+        this.sourceFiles = extractedSourceFiles.stream()
+        		.sorted(Comparator.comparing(SourceFileFact::relativePath))
+        		.toList();
 
         Map<String, MethodFact> index = new LinkedHashMap<>();
 
@@ -54,6 +58,7 @@ public final class ProjectFact {
                 .flatMap(method -> method.calls().stream())
                 .toList();
     }
+    
 
     public Optional<MethodFact> findMethod(String methodId) {
         return Optional.ofNullable(
@@ -68,6 +73,7 @@ public final class ProjectFact {
 
         return findMethod(call.targetMethod());
     }
+    
 
     private static TypeFact sortedType(TypeFact type) {
         List<String> interfaces = type.interfaces().stream()
@@ -114,7 +120,26 @@ public final class ProjectFact {
                 method.name(),
                 method.nbParametre(),
                 method.constructor(),
+                method.bodyLineCount(),
                 calls
         );
+    }
+    
+    //B2.2 linecount && paquete
+    public List<SourceFileFact> sourceFiles(){
+    	return sourceFiles;
+    }
+    
+    public int applicationLineCount() {
+        return sourceFiles.stream()
+                .mapToInt(SourceFileFact::lineCount)
+                .sum();
+    }
+    
+    public long packageCount() {
+        return sourceFiles.stream()
+                .map(SourceFileFact::packageName)
+                .distinct()
+                .count();
     }
 }
