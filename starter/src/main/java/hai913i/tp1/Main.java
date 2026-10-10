@@ -10,6 +10,9 @@ import java.util.Map;
 import org.eclipse.jdt.core.compiler.IProblem;
 
 import hai913i.tp1.extract.StructureVisitor;
+import hai913i.tp1.graph.CallEdge;
+import hai913i.tp1.graph.CallGraph;
+import hai913i.tp1.graph.CallgraphBuilder;
 import hai913i.tp1.metrics.MetricsCalculator;
 import hai913i.tp1.model.CallFact;
 import hai913i.tp1.model.FieldFact;
@@ -298,6 +301,7 @@ public final class Main {
                 + facts.packageCount()
         );
         
+        //B2 metrics
         System.out.println();
         System.out.println("Metriques B2");
         System.out.println("------------");
@@ -442,5 +446,132 @@ public final class Main {
             );
         }
         
+        //B3 Graph
+        CallGraph callGraph = CallgraphBuilder.build(facts);
+        
+        System.out.println();
+        System.out.println("Graphe d'appel B3");
+        System.out.println("-----------------");
+
+        System.out.println(
+                "Noeuds                 : "
+                + callGraph.nodeCount()
+        );
+
+        System.out.println(
+                "Arcs                   : "
+                + callGraph.edgeCount()
+        );
+
+        System.out.println(
+                "Sites internes         : "
+                + callGraph.internalCallSites()
+        );
+
+        System.out.println(
+                "Appels externes        : "
+                + callGraph.externalCallSites()
+        );
+
+        System.out.println(
+                "Appels non resolus     : "
+                + callGraph.unresolvedCallSites()
+        );
+        
+        System.out.println();
+        System.out.println("Arcs :");
+
+        for (CallEdge edge : callGraph.edges()) {
+            System.out.println(
+                    "  "
+                    + edge.callerId()
+                    + " -> "
+                    + edge.targetId()
+                    + " [poids="
+                    + edge.weight()
+                    + "]"
+            );
+        }
+        
+        //B3 validation Loanable#CheckOut caller
+        String loanableCheckOut = "library.model.Loanable" + "#checkOut(library.model.Member)";
+        printCallers(callGraph,loanableCheckOut);
+        
+        //B3 validation Item#checkout
+        String itemCheckOut = "library.model.Item" + "#checkOut(library.model.Member)";
+        printCallers(callGraph,itemCheckOut);
+        
+        
+        String borrow = "library.service.LoanService"
+        				+ "#borrow("
+        				+ "library.model.Member,"
+        				+ "java.lang.String,"
+        				+ "int)";
+        printCallees(callGraph, borrow);
+        
+        //暂时
+        callGraph.edges().stream()
+        .filter(edge ->
+                edge.callerId().contains(
+                        "Catalog#add(library.model.Item,library.model.Item)"
+                )
+        )
+        .forEach(System.out::println);
+        
+        callGraph.edges().stream()
+        .filter(edge ->
+                edge.callerId().contains(
+                        "TextUtils#repeat"
+                )
+                && edge.callerId().equals(edge.targetId())
+        )
+        .forEach(System.out::println);
+        
+    }
+    
+    
+    //B3 affichage
+    private static void printCallees(CallGraph graph, String methodId) {
+    	System.out.println();
+    	System.out.println("Methodes appelees par : " + methodId);
+    	
+    	List<CallEdge> edges = graph.calleesOf(methodId);
+    	
+    	if (edges.isEmpty()) {
+    		System.out.println("aucune");
+    		return;
+    	}
+    	
+    	for (CallEdge edge : edges) {
+    		System.out.println(
+    				" "
+    				+ edge.targetId()
+    				+ "[poids="
+    				+ edge.weight()
+    				+ "]");
+    	}
+    }
+    
+    // recherche callers
+    private static void printCallers(CallGraph graph, String methodId) {
+    	System.out.println();
+        System.out.println("Methodes appelantes de : " + methodId);
+        
+        List<CallEdge> edges = graph.callersOf(methodId);
+        
+        if (edges.isEmpty()) {
+    		System.out.println("aucune");
+    		return;
+    	}
+        
+        for (CallEdge edge : edges) {
+            System.out.println(
+                    "    "
+                    + edge.callerId()
+                    + " [poids="
+                    + edge.weight()
+                    + "]"
+            );
+        }
     }
 }
