@@ -72,7 +72,7 @@ public final class Main {
             }
         }
         
-        
+        System.out.println();
         //A2 structureVisitor
         StructureVisitor structureVisitor = new StructureVisitor();
         
@@ -98,13 +98,6 @@ public final class Main {
                 .filter(type -> type.kind() == TypeKind.RECORD)
                 .count();
         
-        System.out.println("Structure du projet :");
-        System.out.println("Types       : " + types.size());
-        System.out.println("Classes     : " + classCount);
-        System.out.println("Interfaces  : " + interfaceCount);
-        System.out.println("Enumerations: " + enumCount);
-        System.out.println("Records     : " + recordCount);
-        
         System.out.println("Types extraits :");
         types.stream()
                 .sorted((first, second) ->
@@ -117,10 +110,10 @@ public final class Main {
                                 + type.qualifiedName()
                         )
                 );
-        
+
         //暂时
         for (TypeFact type : types) {
-        	 System.out.println();
+        	System.out.println();
         	System.out.println(type.qualifiedName());
         	System.out.println("  kind        : " + type.kind());
             System.out.println("  package     : " + type.packageName());
@@ -142,19 +135,20 @@ public final class Main {
                 System.out.println(
                         "  METHOD "
                         + method.name()
+                        + "id=" + method.id()
                         + " parameters=" + method.nbParametre()
                         + " constructor=" + method.constructor()
                 );
                 
                 for (CallFact call : method.calls()) {
             		System.out.println(
-            				" CALL "
-            				+ call.methodName()
-            				+ "receiver=" + call.receiverType()
-            				+ " target=" + call.targetMethod()
-            				+ "line=" + call.line()
-            				+ "resolved=" + call.resolved()
-            				+ "project=" + call.projectTarget()
+            				"  CALL "
+            				+ call.methodName() + "\n"
+            				+ "  receiver=" + call.receiverType() + "\n"
+            				+ "  target=" + call.targetMethod() + "\n"
+            				+ "  line=" + call.line() + "\n"
+            				+ "  resolved=" + call.resolved() + "\n"
+            				+ "  project=" + call.projectTarget() + "\n"
             				);
             	}
             }
@@ -196,9 +190,15 @@ public final class Main {
                 callCount - projectCallCount - unresolvedCallCount;
         
         System.out.println();
-        System.out.println("Fields : " + fieldCount);
+        System.out.println("Types         : " + types.size());
+        System.out.println("Classes       : " + classCount);
+        System.out.println("Interfaces    : " + interfaceCount);
+        System.out.println("Enumerations  : " + enumCount);
+        System.out.println("Records       : " + recordCount);
+        System.out.println("Fields        : " + fieldCount);
         System.out.println("Methodes      : " + methodCount);
         System.out.println("Constructeurs : " + constructorCount);
+        System.out.println();
         System.out.println("Appels totaux           : " + callCount);
         System.out.println("Appels vers le projet   : " + projectCallCount);
         System.out.println("Appels externes         : " + externalCallCount);

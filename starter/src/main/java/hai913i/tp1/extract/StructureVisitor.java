@@ -2,8 +2,10 @@ package hai913i.tp1.extract;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -12,6 +14,7 @@ import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.EnumDeclaration;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -20,6 +23,7 @@ import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclarationStatement;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 
 import hai913i.tp1.model.FieldFact;
 import hai913i.tp1.model.MethodFact;
@@ -118,7 +122,7 @@ public final class StructureVisitor extends ASTVisitor {
     	List<String> superclasses =extractSuperclasses(node);
         List<String> interfaces =extractInterfaces(node);
     	List<FieldFact> fields = extractFields(node);
-    	List<MethodFact> methods = extractMethods(node);
+    	List<MethodFact> methods = extractMethods(node,qualifiedName);
     	
     	return new TypeFact(
     			qualifiedName,
@@ -221,7 +225,7 @@ public final class StructureVisitor extends ASTVisitor {
     }
     
     //extraction methods
-    private List<MethodFact> extractMethods(AbstractTypeDeclaration declaration) {
+    private List<MethodFact> extractMethods(AbstractTypeDeclaration declaration,String qualifiedTypeName) {
 
         List<MethodFact> methods = new ArrayList<>();
         CompilationUnit compilationUnit = (CompilationUnit) declaration.getRoot();
@@ -231,6 +235,7 @@ public final class StructureVisitor extends ASTVisitor {
 
             if (bodyDeclaration instanceof MethodDeclaration methodDeclaration) {
                 String name = methodDeclaration.getName().getIdentifier();
+                String methodId = createMethodId(methodDeclaration,qualifiedTypeName);
                 int parameterCount = methodDeclaration.parameters().size();
                 boolean constructor = methodDeclaration.isConstructor();
                 
@@ -238,6 +243,7 @@ public final class StructureVisitor extends ASTVisitor {
                 methodDeclaration.accept(callVisitor);
 
                 methods.add(new MethodFact(
+                		methodId,
                         name,
                         parameterCount,
                         constructor,
@@ -248,4 +254,74 @@ public final class StructureVisitor extends ASTVisitor {
 
         return methods;
     }
+    
+    private String createMethodId(MethodDeclaration methodDeclaration, String fallbackDeclaringType) {
+    	IMethodBinding binding = methodDeclaration.resolveBinding();
+    	
+    	if (binding == null) {
+    		return createFallbackMethodId(methodDeclaration, fallbackDeclaringType);
+    	}
+    	
+    	IMethodBinding declaration = binding.getMethodDeclaration();
+    	
+        String declaringType = typeName(declaration.getDeclaringClass());
+        String methodName = declaration.isConstructor()
+        		? "<init>"
+        	    : declaration.getName();
+        String parameters = Arrays.stream(declaration.getParameterTypes()
+        		)
+        		.map(this::typeName)
+        		.collect(Collectors.joining(","));
+        
+        return declaringType
+        		+ "#"
+        		+ methodName
+        		+ "("
+        		+ parameters
+        		+ ")";
+    }
+    
+    private String typeName(ITypeBinding binding) {
+    	if (binding == null) {
+            return "non resolu";
+        }
+
+        ITypeBinding erasedType = binding.getErasure();
+        String qualifiedName = erasedType.getQualifiedName();
+
+        if (qualifiedName == null || qualifiedName.isBlank()) {
+            return erasedType.getName();
+        }
+
+        return qualifiedName;
+	}
+
+	// eviter la collaption
+    private String createFallbackMethodId(MethodDeclaration methodDeclaration,String declaringType) {
+    	String methodName = methodDeclaration.isConstructor()
+    			? "<init>"
+    			: methodDeclaration.getName().getIdentifier();
+    	
+    	List<?> declaredParameters = methodDeclaration.parameters();
+    	String parameters = declaredParameters.stream()
+                .map(element -> (SingleVariableDeclaration) element)
+                .map(parameter ->
+                        parameter.getType().toString()
+                        + (parameter.isVarargs() ? "..." : "")
+                        + "[]".repeat(
+                                parameter.extraDimensions().size()
+                        )
+                )
+                .collect(Collectors.joining(","));
+    	
+    	return declaringType
+    			+ "#"
+    			+ methodName
+    			+ "("
+    			+ parameters
+    			+ ")";
+    }
+    
+    
+    
 }
