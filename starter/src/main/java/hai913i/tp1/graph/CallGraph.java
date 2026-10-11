@@ -123,4 +123,13 @@ public final class CallGraph {
     public boolean containsNode(String methodId) {
     	return nodesById.containsKey(methodId);
     }
+    
+    
+    //C2
+    public List<String> nodeIds() {
+        return nodesById.keySet()
+                .stream()
+                .sorted()
+                .toList();
+    }
 }

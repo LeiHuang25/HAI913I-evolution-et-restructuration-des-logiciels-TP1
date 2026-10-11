@@ -1,0 +1,38 @@
+digraph CallGraph {
+  rankdir=LR;
+  graph [overlap=false, splines=true];
+  label="Paquetage : library.service";
+  labelloc="t";
+  fontsize=18;
+  node [shape=box, style="rounded,filled", fillcolor="#EAF2F8", color="#2471A3", fontname="Arial", fontsize=10];
+  edge [color="#566573", fontname="Arial", fontsize=9];
+
+  "library.service.Catalog#add(library.model.Item)" [label="library.service.Catalog\\nadd(library.model.Item)"];
+  "library.service.Catalog#add(library.model.Item,library.model.Item)" [label="library.service.Catalog\\nadd(library.model.Item,library.model.Item)"];
+  "library.service.Catalog#available()" [label="library.service.Catalog\\navailable()"];
+  "library.service.Catalog#findById(java.lang.String)" [label="library.service.Catalog\\nfindById(java.lang.String)"];
+  "library.service.Catalog#size()" [label="library.service.Catalog\\nsize()"];
+  "library.service.ConsoleNotifier#getSent()" [label="library.service.ConsoleNotifier\\ngetSent()"];
+  "library.service.ConsoleNotifier#send(library.model.Member,java.lang.String)" [label="library.service.ConsoleNotifier\\nsend(library.model.Member,java.lang.String)"];
+  "library.service.LoanException#<init>(java.lang.String)" [label="library.service.LoanException\\n<init>(java.lang.String)"];
+  "library.service.LoanService#<init>(library.service.Catalog,library.service.Notifier)" [label="library.service.LoanService\\n<init>(library.service.Catalog,library.service.Notifier)"];
+  "library.service.LoanService#borrow(library.model.Member,java.lang.String,int)" [label="library.service.LoanService\\nborrow(library.model.Member,java.lang.String,int)"];
+  "library.service.LoanService#getHistory()" [label="library.service.LoanService\\ngetHistory()"];
+  "library.service.LoanService#getRefusals()" [label="library.service.LoanService\\ngetRefusals()"];
+  "library.service.LoanService#giveBack(library.service.LoanService.Loan)" [label="library.service.LoanService\\ngiveBack(library.service.LoanService.Loan)"];
+  "library.service.LoanService#totalFees()" [label="library.service.LoanService\\ntotalFees()"];
+  "library.service.LoanService.Loan#<init>(library.model.Item,library.model.Member,int)" [label="library.service.LoanService.Loan\\n<init>(library.model.Item,library.model.Member,int)"];
+  "library.service.LoanService.Loan#getDays()" [label="library.service.LoanService.Loan\\ngetDays()"];
+  "library.service.LoanService.Loan#getItem()" [label="library.service.LoanService.Loan\\ngetItem()"];
+  "library.service.LoanService.Loan#getMember()" [label="library.service.LoanService.Loan\\ngetMember()"];
+  "library.service.Notifier#send(library.model.Member,java.lang.String)" [label="library.service.Notifier\\nsend(library.model.Member,java.lang.String)"];
+
+  "library.service.Catalog#add(library.model.Item,library.model.Item)" -> "library.service.Catalog#add(library.model.Item)" [label="2"];
+  "library.service.LoanService#borrow(library.model.Member,java.lang.String,int)" -> "library.service.Catalog#findById(java.lang.String)" [label="1"];
+  "library.service.LoanService#borrow(library.model.Member,java.lang.String,int)" -> "library.service.Notifier#send(library.model.Member,java.lang.String)" [label="1"];
+  "library.service.LoanService#giveBack(library.service.LoanService.Loan)" -> "library.service.LoanService.Loan#getItem()" [label="2"];
+  "library.service.LoanService#giveBack(library.service.LoanService.Loan)" -> "library.service.LoanService.Loan#getMember()" [label="1"];
+  "library.service.LoanService#giveBack(library.service.LoanService.Loan)" -> "library.service.Notifier#send(library.model.Member,java.lang.String)" [label="1"];
+  "library.service.LoanService#totalFees()" -> "library.service.LoanService.Loan#getDays()" [label="1"];
+  "library.service.LoanService#totalFees()" -> "library.service.LoanService.Loan#getItem()" [label="1"];
+}
