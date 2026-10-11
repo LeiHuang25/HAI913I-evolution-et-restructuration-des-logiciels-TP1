@@ -17,6 +17,10 @@ L'environnement suivant est nécessaire :
 
 - JDK 17 ou supérieur ;
 - Maven 3.9 ou supérieur ;
+- Eclipse JDT Core : 3.46.0
+- Spoon : 11.5.0
+- JUnit Jupiter : 5.14.4
+- Système : Windows
 - Git, uniquement pour cloner le dépôt.
 
 Pour vérifier l'installation :
@@ -74,10 +78,10 @@ Les chemins contenant des espaces doivent être placés entre guillemets.
 
 | Mode | Résultat |
 |---|---|
-| structure | Types, attributs, méthodes et héritage |
-| calls | Appels, receveurs et cibles |
-| metrics | Métriques Q1 à Q13 |
-| graph | Graphe d'appel interne |
+| structure | Types, attributs, méthodes et héritage |  :  java -jar target\hai913i-tp1-analyzer.jar "..\resources\validation" structure 5
+| calls | Appels, receveurs et cibles | : java -jar target\hai913i-tp1-analyzer.jar "..\resources\validation" calls 5
+| metrics | Métriques Q1 à Q13 |  : java -jar target\hai913i-tp1-analyzer.jar "..\resources\validation" metrics 5
+| graph | Graphe d'appel interne | : java -jar target\hai913i-tp1-analyzer.jar "..\resources\validation" graph 5
 | all | Toutes les sorties |
 
 ## 5. Exemple complet
@@ -137,11 +141,14 @@ L'outil ne s'arrête pas à la première erreur.
 
     java -jar target\hai913i-tp1-analyzer.jar "..\resources\robustness\missing-dep" all 5
 
+    $LASTEXITCODE
+
 Les bindings non résolus sont signalés sans interrompre l'analyse.
 
 ### Seuil incorrect
 
     java -jar target\hai913i-tp1-analyzer.jar "..\resources\validation" metrics abc
+
 
 L'outil refuse la valeur et affiche un message d'utilisation explicite.
 
@@ -158,12 +165,32 @@ Sous PowerShell, le dernier code de sortie peut être consulté avec :
 Une analyse normale doit retourner 0. Une analyse impossible doit retourner
 un code non nul.
 
+## Analyse avec Spoon — C1
+
+Pour exécuter la comparaison JDT/Spoon :
+
+    mvn "-Dtest=SpoonParserTest" test
+
+L'extraction Spoon utilise la version 11.5.0 et le mode `noClasspath`
+pour le projet contenant une dépendance manquante.
+
+## Export du graphe — C2
+
+Le graphe d'appel peut être exporté au format DOT, puis converti avec Graphviz :
+
+    dot -Tpng output/callgraph-service.dot -o output/callgraph-service.png
+
+La vue filtrée sur `library.service` permet d'obtenir une image plus lisible.
+Le répertoire `output` contient uniquement des fichiers engendrés et n'est
+pas versionné.
+
+
 ## 8. Construction depuis une copie fraîche
 
 Pour vérifier la reproductibilité :
 
-    git clone URL_DU_DEPOT
-    cd NOM_DU_DEPOT/starter
+    git clone https://github.com/LeiHuang25/HAI913I-evolution-et-restructuration-des-logiciels-TP1.git
+    cd HAI913I-evolution-et-restructuration-des-logiciels-TP1/starter
     mvn clean package
     java -jar target/hai913i-tp1-analyzer.jar "../resources/validation" all 5
 

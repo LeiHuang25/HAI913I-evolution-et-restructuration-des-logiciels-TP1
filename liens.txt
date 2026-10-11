@@ -1,0 +1,4 @@
+git :
+	https://github.com/LeiHuang25/HAI913I-evolution-et-restructuration-des-logiciels-TP1
+video :
+	https://drive.google.com/file/d/1AgtktfhhqY2BZxS9brx4XFMDDYNbPkJp/view?usp=sharing
