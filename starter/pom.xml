@@ -5,9 +5,17 @@
   Versions epinglees et testees : JDK 17 (minimum) et 21, Maven 3.9.6,
   Eclipse JDT Core 3.46.0, JUnit Jupiter 5.14.4.
 
-    mvn clean test       compile et execute le test de fumee (point de controle A0)
+    mvn clean test       compile et execute les tests
     mvn clean package    produit target/hai913i-tp1-analyzer.jar (executable)
-    java -jar target/hai913i-tp1-analyzer.jar CHEMIN_DU_PROJET
+    java -jar target/hai913i-tp1-analyzer.jar "CHEMIN_DU_PROJET" MODE X
+  Modes disponibles :
+  	structure
+  	calls
+  	metrics
+  	graph
+  	all
+  Exemple :
+    java -jar target/hai913i-tp1-analyzer.jar "../resources/validation" all 5
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

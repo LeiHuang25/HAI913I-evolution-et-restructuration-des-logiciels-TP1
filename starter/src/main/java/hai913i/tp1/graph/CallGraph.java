@@ -119,4 +119,8 @@ public final class CallGraph {
                 nodesById.get(methodId)
         );
     }
+    
+    public boolean containsNode(String methodId) {
+    	return nodesById.containsKey(methodId);
+    }
 }
